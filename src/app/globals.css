@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500&display=swap');
+
+:root {
+  --background: 240 10% 100%;
+  --foreground: 240 10% 3.9%;
+  --accent-1: 267 75% 31%;
+  --accent-2: 263 70% 50%;
+  --accent-3: 251 91% 65%;
+  --accent-4: 0 0% 100%; /* Blanc pur */
+}
+
+.dark {
+  --background: 240 10% 4%;
+  --foreground: 0 0% 98%;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.masonry-grid {
+  display: flex;
+  width: auto;
+  margin-left: -1.5rem; /* Augmenté l'espace entre les colonnes */
+}
+
+.masonry-grid_column {
+  padding-left: 1.5rem; /* Augmenté l'espace entre les colonnes */
+  background-clip: padding-box;
+}
+
+/* Retrait des transformations de scale sur la carte elle-même */
+.photo-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem; /* Augmenté l'espace entre les lignes */
+}
+
+.photo-card img {
+  transition: all 0.4s ease-out;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.photo-card:hover img {
+  transform: scale(1.05); /* Réduit légèrement l'effet de zoom */
+}
+
+/* Ajout d'une ombre subtile au survol */
+.photo-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.photo-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.photo-card:hover .photo-overlay {
+  opacity: 1;
+}
+
+.morphing-background {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  background: radial-gradient(circle at 50% 50%,
+    hsl(var(--accent-1)) 0%,
+    hsl(var(--accent-2)) 25%,
+    hsl(var(--accent-3)) 50%,
+    hsl(var(--background)) 100%
+  );
+  filter: blur(100px);
+  opacity: 0.5;
+}
