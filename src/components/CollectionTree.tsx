@@ -33,7 +33,9 @@ export function CollectionTree({ collections, level = 0 }: CollectionTreeProps) 
               ${!collection.children ? 'cursor-pointer' : ''} 
               ${currentPath === collection.path 
                 ? 'text-white font-bold' 
-                : `text-accent2 ${!collection.children ? 'hover:text-accent3' : ''}`}`}
+                : collection.children
+                  ? 'text-gray-500' // gris foncé pour les collections non finales
+                  : 'text-accent2 hover:text-accent3'}`}
             onClick={() => !collection.children && handleCollectionClick(collection.path)}
             style={{ paddingLeft: `${level * 2}rem` }}
           >

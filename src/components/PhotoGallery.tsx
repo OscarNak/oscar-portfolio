@@ -104,12 +104,14 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
             transition={{ duration: 0.5 }}
             className="mb-4"
           >
-            <Link href={`/photo/${encodeURIComponent(photo.id)}`} className="block">              <div 
-                className="relative rounded-lg overflow-hidden"
+            <Link href={`/photo/${encodeURIComponent(photo.id)}`} className="block">
+              <div 
+                className="photo-card relative rounded-lg overflow-hidden"
                 style={{
                   paddingBottom: `${(photo.height / photo.width) * 100}%`
                 }}
-              >                <Image
+              >
+                <Image
                   src={photo.optimizedSrc}
                   alt={photo.title}
                   fill
