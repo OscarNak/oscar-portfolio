@@ -35,7 +35,7 @@ export function CollectionTree({ collections, level = 0 }: CollectionTreeProps) 
                 ? 'text-white font-bold' 
                 : `text-accent2 ${!collection.children ? 'hover:text-accent3' : ''}`}`}
             onClick={() => !collection.children && handleCollectionClick(collection.path)}
-            style={{ paddingLeft: `${level * 1}rem` }}
+            style={{ paddingLeft: `${level * 2}rem` }}
           >
             <span className="w-6 inline-block">
               {level === 0 ? '$' : index === collections.length - 1 ? '└─' : '├─'}
