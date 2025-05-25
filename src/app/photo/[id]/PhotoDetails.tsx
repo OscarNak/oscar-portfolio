@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import { Photo } from '@/utils/photos'
-import { useState, useEffect} from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 type PhotoDetailsProps = {
@@ -13,6 +13,7 @@ type PhotoDetailsProps = {
 export default function PhotoDetails({ photo }: PhotoDetailsProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
+  const [isImageReady, setIsImageReady] = useState(false)
   const title = photo.title
     .split(/[-_]/)
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
@@ -20,9 +21,18 @@ export default function PhotoDetails({ photo }: PhotoDetailsProps) {
     .replace(/\.(jpg|jpeg|png|webp)$/i, '')
 
   useEffect(() => {
-    // Reset loading state when photo changes
     setIsLoading(true)
-  }, [photo.id])
+    setIsImageReady(false)
+      // Précharger l'image optimisée
+    if (typeof window !== 'undefined') {
+      const img = document.createElement('img')
+      img.src = photo.optimizedSrc
+      img.onload = () => {
+        setIsImageReady(true)
+        setIsLoading(false)
+      }
+    }
+  }, [photo.id, photo.optimizedSrc])
 
   return (
     <main className="container mx-auto px-4 py-8">      
@@ -66,6 +76,7 @@ export default function PhotoDetails({ photo }: PhotoDetailsProps) {
                   key="loading"
                   initial={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
                   className="absolute inset-0 bg-background/20 backdrop-blur-sm"
                 >
                   <Image
@@ -84,13 +95,14 @@ export default function PhotoDetails({ photo }: PhotoDetailsProps) {
               alt={title}
               width={photo.width}
               height={photo.height}
-              className="rounded-lg"
-              quality={85}
+              className={`rounded-lg transition-opacity duration-300 ${isImageReady ? 'opacity-100' : 'opacity-0'}`}
+              quality={100}
               placeholder="blur"
               blurDataURL={photo.blurDataURL}
-              sizes="(max-width: 768px) 100vw, 50vw"
+              loading="eager"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 50vw"
               priority
-              onLoad={() => setIsLoading(false)}
+              onLoadingComplete={() => setIsImageReady(true)}
             />
           </div>
         </motion.div>
@@ -109,6 +121,7 @@ export default function PhotoDetails({ photo }: PhotoDetailsProps) {
                   key="loading"
                   initial={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
                   className="absolute inset-0 bg-background/20 backdrop-blur-sm"
                 >
                   <Image
@@ -127,13 +140,14 @@ export default function PhotoDetails({ photo }: PhotoDetailsProps) {
               alt={title}
               width={photo.width}
               height={photo.height}
-              className="rounded-lg"
-              quality={85}
+              className={`rounded-lg transition-opacity duration-300 ${isImageReady ? 'opacity-100' : 'opacity-0'}`}
+              quality={100}
               placeholder="blur"
               blurDataURL={photo.blurDataURL}
-              sizes="(max-width: 768px) 100vw, 50vw"
+              loading="eager"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 50vw"
               priority
-              onLoad={() => setIsLoading(false)}
+              onLoadingComplete={() => setIsImageReady(true)}
             />
           </div>
           <div className="space-y-6">

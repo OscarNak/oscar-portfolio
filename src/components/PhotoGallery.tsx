@@ -14,7 +14,8 @@ type PhotoGalleryProps = {
 const breakpointColumns = {
   default: 3,
   1100: 2,
-  700: 1
+  768: 2,
+  640: 1
 }
 
 export function PhotoGallery({ photos }: PhotoGalleryProps) {

@@ -47,18 +47,18 @@ export default async function Home({
   });
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <div className="flex gap-12 max-w-[2000px] mx-auto">
-        <aside className="w-80 shrink-0">
-          <nav className="sticky top-8">
-            <h1 className="mb-8 text-3xl font-bold text-accent2 tracking-wide font-space">Oscar - Portfolio</h1>
-            <div className="p-6 rounded-xl backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
+    <div className="min-h-screen p-4 pb-20 sm:p-8 lg:p-20 font-[family-name:var(--font-geist-sans)]">
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-12 max-w-[2000px] mx-auto">
+        <aside className="w-full lg:w-80 lg:shrink-0">
+          <nav className="lg:sticky lg:top-8">
+            <h1 className="mb-4 lg:mb-8 text-2xl lg:text-3xl font-bold text-accent2 tracking-wide font-space">Oscar - Portfolio</h1>
+            <div className="p-4 lg:p-6 rounded-xl backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
               <CollectionTree collections={collections} />
             </div>
           </nav>
         </aside>
 
-        <main className="flex-grow min-w-0">
+        <main className="flex-grow min-w-0 mt-6 lg:mt-0">
           <PhotoGalleryWrapper photos={photos} />
         </main>
       </div>
