@@ -1,4 +1,4 @@
-import { PhotoGallery } from "@/components/PhotoGallery";
+import { PhotoGalleryWrapper } from "@/components/PhotoGalleryWrapper";
 import { CollectionTree } from "@/components/CollectionTree";
 import { getCollections, getPhotosForCollection } from "@/utils/collections";
 import { getPhotos } from "@/utils/photos";
@@ -13,8 +13,7 @@ export default async function Home({
   searchParams: { [key: string]: string | string[] | undefined }
 }) {
   // Récupération des données en parallèle d'abord
-  const [allPhotos, collections] = await Promise.all([
-    getPhotos(),
+  const [collections] = await Promise.all([
     getCollections(),
   ]);
 
@@ -27,9 +26,25 @@ export default async function Home({
   
   const photoPaths = getPhotosForCollection(currentPath);
   
-  const photos = allPhotos.filter(photo => 
-    photoPaths.includes(`${currentPath}/${path.basename(photo.id)}.jpg`)
-  );
+  // On ne récupère que les photos nécessaires pour la collection courante
+  const allPhotos = await getPhotos();
+  
+  // Vérification et déduplication des photos basée sur l'ID
+  const seenIds = new Set<string>();
+  const uniquePhotos = allPhotos.filter(photo => {
+    const isDuplicate = seenIds.has(photo.id);
+    seenIds.add(photo.id);
+    if (isDuplicate) {
+      console.warn(`Duplicate photo ID found: ${photo.id}`);
+    }
+    return !isDuplicate;
+  });
+
+  // Filtrer les photos pour ne garder que celles de la collection courante
+  const photos = uniquePhotos.filter(photo => {
+    const normalizedPhotoPath = path.join(currentPath, path.basename(photo.id)).replace(/\\/g, '/');
+    return photoPaths.some(p => p.startsWith(normalizedPhotoPath));
+  });
 
   return (
     <div className="min-h-screen p-8 pb-20 sm:p-20 font-[family-name:var(--font-geist-sans)]">
@@ -44,7 +59,7 @@ export default async function Home({
         </aside>
 
         <main className="flex-grow min-w-0">
-          <PhotoGallery photos={photos} />
+          <PhotoGalleryWrapper photos={photos} />
         </main>
       </div>
     </div>

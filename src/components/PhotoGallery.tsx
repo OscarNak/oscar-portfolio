@@ -5,7 +5,7 @@ import Masonry from 'react-masonry-css'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Photo } from '@/utils/photos'
-import { useCallback, useEffect, useState, useMemo } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 
 type PhotoGalleryProps = {
   photos: Photo[]
@@ -18,45 +18,67 @@ const breakpointColumns = {
 }
 
 export function PhotoGallery({ photos }: PhotoGalleryProps) {
-  const photosWithUniqueIds = useMemo(() => 
-    photos.map(photo => ({
-      ...photo,
-      uniqueId: `${photo.id}-${Math.random().toString(36).substr(2, 9)}`
-    })), 
-    [photos]
-  )
+  // État de la galerie
+  const [visiblePhotos, setVisiblePhotos] = useState<Photo[]>([])
+  const [loadedOptimized, setLoadedOptimized] = useState(() => new Set<string>())
+  const loadedPhotosCache = useRef(new Set<string>())
   
-  const [loadedPhotos, setLoadedPhotos] = useState<string[]>([])
-  const [visiblePhotos, setVisiblePhotos] = useState<typeof photosWithUniqueIds[0][]>([])
-  const initialBatchSize = 9
-  const subsequentBatchSize = 6    
-  const preloadImages = useCallback((imagesToPreload: typeof photosWithUniqueIds[0][]) => {
+  // Configuration du chargement par lots
+  const initialBatchSize = 6
+  const subsequentBatchSize = 6
+
+  // Préchargement optimisé des images avec priorité aux thumbnails
+  const preloadImages = useCallback((imagesToPreload: Photo[]) => {
+    if (typeof window === 'undefined') return
+
     imagesToPreload.forEach(photo => {
-      const img = document.createElement('img')
-      img.src = photo.optimizedSrc
+      const thumb = document.createElement('img')
+      thumb.src = photo.thumbnailSrc
+      thumb.onload = () => {
+        const full = document.createElement('img')
+        full.src = photo.optimizedSrc
+      }
     })
   }, [])
 
-  const loadMorePhotos = useCallback(() => {
-    const nextBatch = photosWithUniqueIds.slice(
-      visiblePhotos.length,
-      visiblePhotos.length + subsequentBatchSize
-    )
-    setVisiblePhotos(prev => [...prev, ...nextBatch])
-    
-    const nextBatchToPreload = photosWithUniqueIds.slice(
-      visiblePhotos.length + subsequentBatchSize,
-      visiblePhotos.length + (subsequentBatchSize * 2)
-    )
-    preloadImages(nextBatchToPreload)
-  }, [photosWithUniqueIds, visiblePhotos.length, preloadImages])
+  // Gestion du chargement progressif des images
+  const handlePhotoLoad = useCallback((photo: Photo) => {
+    if (!loadedPhotosCache.current.has(photo.id)) {
+      loadedPhotosCache.current.add(photo.id)
+      
+      // Charger la version optimisée en arrière-plan
+      if (typeof window !== 'undefined') {
+        const img = document.createElement('img')
+        img.onload = () => {
+          setLoadedOptimized(prev => {
+            const next = new Set(prev)
+            next.add(photo.id)
+            return next
+          })
+        }
+        img.src = photo.optimizedSrc
+      }
+    }
+  }, [])
 
+  // Gestion du scroll infini
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
-          if (entry.isIntersecting && visiblePhotos.length < photosWithUniqueIds.length) {
-            loadMorePhotos()
+          if (entry.isIntersecting && visiblePhotos.length < photos.length) {
+            const nextBatch = photos.slice(
+              visiblePhotos.length,
+              visiblePhotos.length + subsequentBatchSize
+            )
+            setVisiblePhotos(prev => [...prev, ...nextBatch])
+            
+            // Précharger le prochain lot d'images
+            const nextBatchToPreload = photos.slice(
+              visiblePhotos.length + subsequentBatchSize,
+              visiblePhotos.length + (subsequentBatchSize * 2)
+            )
+            preloadImages(nextBatchToPreload)
           }
         })
       },
@@ -67,24 +89,18 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
     if (sentinel) observer.observe(sentinel)
 
     return () => observer.disconnect()
-  }, [loadMorePhotos, visiblePhotos.length, photosWithUniqueIds.length])
+  }, [photos, visiblePhotos.length, subsequentBatchSize, preloadImages])
 
+  // Chargement initial
   useEffect(() => {
-    const initialBatch = photosWithUniqueIds.slice(0, initialBatchSize)
+    const initialBatch = photos.slice(0, initialBatchSize)
     setVisiblePhotos(initialBatch)
-    setLoadedPhotos([])
     
-    const nextBatch = photosWithUniqueIds.slice(initialBatchSize, initialBatchSize + subsequentBatchSize)
+    const nextBatch = photos.slice(initialBatchSize, initialBatchSize + subsequentBatchSize)
     preloadImages(nextBatch)
-  }, [photosWithUniqueIds, initialBatchSize, subsequentBatchSize, preloadImages])
+  }, [photos, initialBatchSize, subsequentBatchSize, preloadImages])
 
-  const handlePhotoLoad = useCallback((uniqueId: string) => {
-    setLoadedPhotos(prev => [...prev, uniqueId])
-  }, [])
-
-  if (visiblePhotos.length === 0) {
-    return null
-  }
+  if (visiblePhotos.length === 0) return null
 
   return (
     <div className="w-full">
@@ -95,13 +111,13 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
       >
         {visiblePhotos.map((photo) => (
           <motion.div
-            key={photo.uniqueId}
+            key={photo.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ 
-              opacity: loadedPhotos.includes(photo.uniqueId) ? 1 : 0,
-              y: loadedPhotos.includes(photo.uniqueId) ? 0 : 20 
+              opacity: 1,
+              y: 0 
             }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.3 }}
             className="mb-4"
           >
             <Link href={`/photo/${encodeURIComponent(photo.id)}`} className="block">
@@ -112,7 +128,7 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
                 }}
               >
                 <Image
-                  src={photo.optimizedSrc}
+                  src={loadedOptimized.has(photo.id) ? photo.optimizedSrc : photo.thumbnailSrc}
                   alt={photo.title}
                   fill
                   style={{ objectFit: 'cover' }}
@@ -120,8 +136,9 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
                   placeholder="blur"
                   blurDataURL={photo.blurDataURL}
                   sizes="(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw"
-                  onLoad={() => handlePhotoLoad(photo.uniqueId)}
+                  onLoad={() => handlePhotoLoad(photo)}
                   priority={visiblePhotos.indexOf(photo) < 3}
+                  quality={loadedOptimized.has(photo.id) ? 85 : 60}
                 />
                 <div className="photo-overlay">
                   <h3 className="text-white text-xl font-medium">{photo.title}</h3>
