@@ -1,5 +1,6 @@
 import { PhotoGalleryWrapper } from "@/components/PhotoGalleryWrapper";
 import { CollectionTree } from "@/components/CollectionTree";
+import { TerminalTitle } from "@/components/TerminalTitle";
 import { getCollections, getPhotosForCollection } from "@/utils/collections";
 import { getPhotos } from "@/utils/photos";
 import path from "path";
@@ -51,7 +52,9 @@ export default async function Home({
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-12 max-w-[2000px] mx-auto">
         <aside className="w-full lg:w-80 lg:shrink-0">
           <nav className="lg:sticky lg:top-8">
-            <h1 className="mb-4 lg:mb-8 text-2xl lg:text-3xl font-bold text-accent2 tracking-wide font-space">Oscar - Portfolio</h1>
+            <div className="mb-4 lg:mb-8">
+              <TerminalTitle text="cd portfolio/" speed={80} />
+            </div>
             <div className="p-4 lg:p-6 rounded-xl backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
               <CollectionTree collections={collections} />
             </div>
