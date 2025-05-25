@@ -2,16 +2,16 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
-import Link from 'next/link'
 import { Photo } from '@/utils/photos'
-import { useState, useEffect } from 'react'
-import { p } from 'framer-motion/client'
+import { useState, useEffect} from 'react'
+import { useRouter } from 'next/navigation'
 
 type PhotoDetailsProps = {
   photo: Photo
 }
 
 export default function PhotoDetails({ photo }: PhotoDetailsProps) {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
   const title = photo.title
     .split(/[-_]/)
@@ -25,13 +25,13 @@ export default function PhotoDetails({ photo }: PhotoDetailsProps) {
   }, [photo.id])
 
   return (
-    <main className="container mx-auto px-4 py-8">
-      <Link
-        href="/"
-        className="mb-8 inline-block text-accent2 hover:text-accent3 transition-colors font-space tracking-wide "
+    <main className="container mx-auto px-4 py-8">      
+      <button
+        onClick={() => router.back()}
+        className="mb-8 inline-block text-accent2 hover:text-accent3 transition-colors font-space tracking-wide"
       >
         ← Retour à la galerie
-      </Link>
+      </button>
       
       {/* Affichage conditionnel selon l'orientation */}
       {photo.width > photo.height ? (
