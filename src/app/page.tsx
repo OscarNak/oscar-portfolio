@@ -13,14 +13,15 @@ export default async function Home({
 }: {
   searchParams: { [key: string]: string | string[] | undefined }
 }) {
-  // Récupération des données en parallèle d'abord
-  const [collections] = await Promise.all([
+  // Récupération des données et des paramètres en parallèle
+  const [collections, resolvedParams] = await Promise.all([
     getCollections(),
+    Promise.resolve(searchParams) // Attendre que searchParams soit résolu
   ]);
 
-  // Traitement des paramètres de recherche après
+  // Traitement des paramètres de recherche
   const defaultPath = 'voyage/coree/seoul';
-  const rawPath = searchParams?.path;
+  const rawPath = resolvedParams?.path;
   const currentPath = rawPath && typeof rawPath === 'string' 
     ? decodeURIComponent(rawPath)
     : defaultPath;
