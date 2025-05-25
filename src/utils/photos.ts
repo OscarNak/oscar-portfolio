@@ -102,8 +102,8 @@ async function optimizeImage(filePath: string, relativePath: string): Promise<{
           withoutEnlargement: true,
         })
         .webp({ 
-          quality: 75,
-          effort: 6,
+          quality: 85,
+          effort: 4,
           force: true
         })
         .toFile(optimizedPath)
