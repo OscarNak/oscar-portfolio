@@ -8,11 +8,8 @@ import path from "path";
 // Mark the page as dynamic to ensure searchParams are available
 export const dynamic = 'force-dynamic';
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined }
-}) {
+export default async function Home({ searchParams }: any) {
+  
   // Récupération des données et des paramètres en parallèle
   const [collections, resolvedParams] = await Promise.all([
     getCollections(),
