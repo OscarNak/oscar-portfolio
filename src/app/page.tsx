@@ -5,11 +5,13 @@ import { getCollections, getPhotosForCollection } from "@/utils/collections";
 import { getPhotos } from "@/utils/photos";
 import path from "path";
 
-// Mark the page as dynamic to ensure searchParams are available
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600; // Revalidate every hour
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default async function Home({ searchParams }: any) {
+type Props = {
+  searchParams?: { [key: string]: string | string[] | undefined }
+}
+
+export default async function Home({ searchParams }: Props) {
 
   // Récupération des données et des paramètres en parallèle
   const [collections, resolvedParams] = await Promise.all([

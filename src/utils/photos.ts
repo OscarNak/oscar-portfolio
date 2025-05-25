@@ -145,56 +145,85 @@ async function optimizeImage(filePath: string, relativePath: string): Promise<{
   }
 }
 
+// Cache pour les métadonnées des photos
+let photoCache: Photo[] | null = null;
+let photoCacheExpiry = 0;
+const CACHE_DURATION = 1000 * 60 * 60; // 1 heure
+
 /**
- * Récupère toutes les photos optimisées.
+ * Récupère toutes les photos optimisées avec mise en cache.
  * @returns une liste de toutes les photos optimisées
  */
 export async function getPhotos(): Promise<Photo[]> {
-  const photosDirectory = path.join(process.cwd(), 'public/photos')
-  const filePaths = getAllPhotosRecursively(photosDirectory, "public/photos")
+  const now = Date.now();
+  
+  // Retourner le cache s'il est valide
+  if (photoCache && now < photoCacheExpiry) {
+    return photoCache;
+  }
 
-  const photos = await Promise.all(
-    filePaths.map(async (relativePath) => {
-      try {
-        const absoluteFilePath = path.join(photosDirectory, relativePath)
-        const { optimizedPath, thumbnailPath, dimensions, thumbnailDimensions } = 
-          await optimizeImage(absoluteFilePath, relativePath)
-        
-        // Générer le placeholder flou depuis la miniature
-        const thumbnailBuffer = await fs.promises.readFile(path.join(process.cwd(), 'public', thumbnailPath))
-        const { base64 } = await getPlaiceholder(thumbnailBuffer)
+  const photosDirectory = path.join(process.cwd(), 'public/photos');
+  const filePaths = getAllPhotosRecursively(photosDirectory, "public/photos");
 
-        // Utiliser le chemin relatif complet comme ID, sans l'extension
-        const id = relativePath.replace(/\.[^/.]+$/, '');
+  // Traiter les photos en parallèle par lots de 10
+  const batchSize = 10;
+  const photos: Photo[] = [];
+  
+  for (let i = 0; i < filePaths.length; i += batchSize) {
+    const batch = filePaths.slice(i, i + batchSize);
+    const batchResults = await Promise.all(
+      batch.map(async (relativePath) => {
+        try {
+          const absoluteFilePath = path.join(photosDirectory, relativePath);
+          const { optimizedPath, thumbnailPath, dimensions, thumbnailDimensions } = 
+            await optimizeImage(absoluteFilePath, relativePath);
+          
+          // Générer le placeholder flou depuis la miniature
+          const thumbnailBuffer = await fs.promises.readFile(path.join(process.cwd(), 'public', thumbnailPath));
+          const { base64 } = await getPlaiceholder(thumbnailBuffer);
+          
+          const id = normalizePhotoId(relativePath);
+          const photo: Photo = {
+            id,
+            title: path.basename(id).split(/[-_]/).map(word => 
+              word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' '),
+            src: `/photos/${relativePath}`,
+            optimizedSrc: optimizedPath,
+            thumbnailSrc: thumbnailPath,
+            width: dimensions.width,
+            height: dimensions.height,
+            thumbnailWidth: thumbnailDimensions.width,
+            thumbnailHeight: thumbnailDimensions.height,
+            blurDataURL: base64
+          };
 
-        const photo: Photo = {
-          id,
-          title: path.basename(id).split(/[-_]/).map(word => 
-            word.charAt(0).toUpperCase() + word.slice(1)
-          ).join(' '),
-          src: `/photos/${relativePath}`,
-          optimizedSrc: optimizedPath,
-          thumbnailSrc: thumbnailPath,
-          width: dimensions.width,
-          height: dimensions.height,
-          thumbnailWidth: thumbnailDimensions.width,
-          thumbnailHeight: thumbnailDimensions.height,
-          blurDataURL: base64
+          return photo;
+        } catch (error) {
+          console.error(`Error processing photo ${relativePath}:`, error);
+          return null;
         }
+      })
+    );
 
-        return photo
-      } catch (error) {
-        console.error(`Error processing photo ${relativePath}:`, error)
-        return null
-      }
-    })
-  )
+    photos.push(...batchResults.filter((photo): photo is Photo => photo !== null));
+  }
 
-  // Filter out any failed photos and assert the type
-  return photos.filter((photo): photo is Photo => photo !== null)
+  // Mettre à jour le cache
+  photoCache = photos;
+  photoCacheExpiry = now + CACHE_DURATION;
+
+  return photos;
 }
 
 export async function getPhotoById(id: string): Promise<Photo | undefined> {
   const photos = await getPhotos()
   return photos.find(p => p.id === id)
+}
+
+/**
+ * Normalizes a photo ID by ensuring forward slashes and removing file extension
+ */
+function normalizePhotoId(relativePath: string): string {
+  return relativePath.replace(/\\/g, '/').replace(/\.[^/.]+$/, '')
 }

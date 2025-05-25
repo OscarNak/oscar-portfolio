@@ -23,23 +23,29 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
   const [visiblePhotos, setVisiblePhotos] = useState<Photo[]>([])
   const [loadedOptimized, setLoadedOptimized] = useState(() => new Set<string>())
   const loadedPhotosCache = useRef(new Set<string>())
-  
-  // Configuration du chargement par lots
-  const initialBatchSize = 6
-  const subsequentBatchSize = 6
-
-  // Préchargement optimisé des images avec priorité aux thumbnails
+    // Configuration du chargement par lots
+  const initialBatchSize = 12
+  const subsequentBatchSize = 12
+  // Préchargement optimisé des images
   const preloadImages = useCallback((imagesToPreload: Photo[]) => {
     if (typeof window === 'undefined') return
 
-    imagesToPreload.forEach(photo => {
-      const thumb = document.createElement('img')
-      thumb.src = photo.thumbnailSrc
-      thumb.onload = () => {
-        const full = document.createElement('img')
-        full.src = photo.optimizedSrc
-      }
-    })
+    const imageLoader = new window.Image()
+    let currentIndex = 0
+
+    const loadNext = () => {
+      if (currentIndex >= imagesToPreload.length) return
+      
+      const photo = imagesToPreload[currentIndex]
+      imageLoader.src = photo.optimizedSrc
+      currentIndex++
+      
+      // Précharger la prochaine image une fois celle-ci chargée
+      imageLoader.onload = loadNext
+      imageLoader.onerror = loadNext
+    }
+
+    loadNext()
   }, [])
 
   // Gestion du chargement progressif des images
