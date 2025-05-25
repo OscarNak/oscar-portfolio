@@ -77,7 +77,7 @@ export function CollectionTree({ collections, level = 0 }: CollectionTreeProps) 
               {level === 0 ? '$' : index === collections.length - 1 ? '└─' : '├─'}
             </span>
             <span>
-              {collection.name}/
+              {collection.name}{collection.children ? '/' : ''}
             </span>
           </div>
           {collection.children && (

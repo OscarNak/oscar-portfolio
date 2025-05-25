@@ -21,7 +21,7 @@ export default function PhotoDetails({ photo }: PhotoDetailsProps) {
     <main className="container mx-auto px-4 py-8">      
       <button
         onClick={() => router.back()}
-        className="mb-8 inline-block text-accent2 hover:text-accent3 transition-colors font-space tracking-wide text-lg font-black"
+        className="mb-8 inline-block text-red-400 hover:text-red-700 transition-colors font-space tracking-wide text-lg font-black"
       >
         &lsaquo; Retour à la galerie
       </button>
@@ -43,12 +43,16 @@ export default function PhotoDetails({ photo }: PhotoDetailsProps) {
             >
               <h1 className="text-3xl font-bold mb-2">{title}</h1>
               <div className="text-foreground/80 space-y-4">
-                <p>
-                  Dimensions: {photo.width} × {photo.height} px
-                </p>
-                <p className="italic">
-                  Capturé avec passion et précision pour révéler la beauté unique de chaque moment.
-                </p>
+                <div className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-2 text-sm font-mono">
+                  <span className="text-amber-600 font-semibold">Dimensions</span>
+                  <span className="font-light">{photo.width} × {photo.height} px</span>
+                  
+                  <span className="text-amber-500 font-semibold">Appareil</span>
+                  <span className="font-light">Fujifilm X-T3</span>
+                  
+                  <span className="text-amber-400 font-semibold">Objectif</span>
+                  <span className="font-light">SIGMA 18-50mm ƒ/2.8 DC DN</span>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -97,12 +101,16 @@ export default function PhotoDetails({ photo }: PhotoDetailsProps) {
             >
               <h1 className="text-3xl font-bold mb-2">{title}</h1>
               <div className="text-foreground/80 space-y-4">
-                <p>
-                  Dimensions: {photo.width} × {photo.height} px
-                </p>
-                <p className="italic">
-                  Capturé avec passion et précision pour révéler la beauté unique de chaque moment.
-                </p>
+                <div className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-2 text-sm font-mono">
+                  <span className="text-amber-600 font-semibold">Dimensions</span>
+                  <span className="font-light">{photo.width} × {photo.height} px</span>
+                  
+                  <span className="text-amber-500 font-semibold">Appareil</span>
+                  <span className="font-light">Fujifilm X-T3</span>
+                  
+                  <span className="text-amber-400 font-semibold">Objectif</span>
+                  <span className="font-light">SIGMA 18-50mm ƒ/2.8 DC DN</span>
+                </div>
               </div>
             </motion.div>
           </div>
