@@ -19,6 +19,9 @@ export type Photo = {
 const OPTIMIZED_DIR = path.join(process.cwd(), 'public/optimized')
 const THUMBNAIL_SIZE = 400
 const OPTIMIZED_SIZE = 1600
+const OPTIMIZED_QUALITY = 85
+const THUMBNAIL_QUALITY = 60
+const COMPRESSION_EFFORT = 4
 
 // Création des dossiers nécessaires
 if (!fs.existsSync(OPTIMIZED_DIR)) {
@@ -53,8 +56,6 @@ async function optimizeImage(filePath: string, relativePath: string): Promise<{
   thumbnailDimensions: { width: number; height: number }
 }> {
   try {
-    const fileName = path.basename(filePath)
-    const safeFileName = fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9]/g, '_')
     const safeRelativePath = relativePath
       .replace(/\.[^/.]+$/, '')
       .split('/')
@@ -85,13 +86,13 @@ async function optimizeImage(filePath: string, relativePath: string): Promise<{
     }
 
     // Read and validate the source image
-    console.log(`Processing image: ${relativePath}`)
+    console.log(`Processing image: ${relativePath}`)    
     const imageBuffer = await fs.promises.readFile(filePath)
     const image = sharp(imageBuffer, { failOnError: false })
-    const metadata = await image.metadata()
+    const { width, height, format } = await image.metadata()
 
-    if (!metadata.format) {
-      throw new Error(`Could not detect format for image: ${fileName}`)
+    if (!format) {
+      throw new Error(`Could not detect format for image: ${relativePath}`)
     }
 
     // Create optimized version
@@ -102,8 +103,8 @@ async function optimizeImage(filePath: string, relativePath: string): Promise<{
           withoutEnlargement: true,
         })
         .webp({ 
-          quality: 85,
-          effort: 4,
+          quality: OPTIMIZED_QUALITY,
+          effort: COMPRESSION_EFFORT,
           force: true
         })
         .toFile(optimizedPath)
@@ -118,27 +119,23 @@ async function optimizeImage(filePath: string, relativePath: string): Promise<{
           withoutEnlargement: true,
         })
         .webp({ 
-          quality: 60,
-          effort: 4,
+          quality: THUMBNAIL_QUALITY,
+          effort: COMPRESSION_EFFORT,
           force: true
         })
         .toFile(thumbnailPath)
     }
 
-    // Get metadata for the processed files
-    const optimizedMetadata = await sharp(optimizedPath).metadata()
-    const thumbnailMetadata = await sharp(thumbnailPath).metadata()
-
+    // Utiliser metadata directement au lieu de relire le fichier
     return {
       optimizedPath: `/optimized/${optimizedFileName}`,
-      thumbnailPath: `/optimized/${thumbnailFileName}`,
-      dimensions: {
-        width: optimizedMetadata.width || metadata.width || 0,
-        height: optimizedMetadata.height || metadata.height || 0,
+      thumbnailPath: `/optimized/${thumbnailFileName}`,      dimensions: {
+        width: width || 0,
+        height: height || 0,
       },
       thumbnailDimensions: {
-        width: thumbnailMetadata.width || THUMBNAIL_SIZE,
-        height: thumbnailMetadata.height || 0,
+        width: THUMBNAIL_SIZE,
+        height: height && width ? Math.round(THUMBNAIL_SIZE * (height / width)) : 0,
       },
     }
   } catch (error: any) {
@@ -147,41 +144,53 @@ async function optimizeImage(filePath: string, relativePath: string): Promise<{
   }
 }
 
+/**
+ * Récupère toutes les photos optimisées.
+ * @returns une liste de toutes les photos optimisées
+ */
 export async function getPhotos(): Promise<Photo[]> {
   const photosDirectory = path.join(process.cwd(), 'public/photos')
   const filePaths = getAllPhotosRecursively(photosDirectory, "public/photos")
 
   const photos = await Promise.all(
     filePaths.map(async (relativePath) => {
-      const absoluteFilePath = path.join(photosDirectory, relativePath)
-      const { optimizedPath, thumbnailPath, dimensions, thumbnailDimensions } = 
-        await optimizeImage(absoluteFilePath, relativePath)
-      
-      // Générer le placeholder flou depuis la miniature
-      const thumbnailBuffer = await fs.promises.readFile(path.join(process.cwd(), 'public', thumbnailPath))
-      const { base64 } = await getPlaiceholder(thumbnailBuffer)
+      try {
+        const absoluteFilePath = path.join(photosDirectory, relativePath)
+        const { optimizedPath, thumbnailPath, dimensions, thumbnailDimensions } = 
+          await optimizeImage(absoluteFilePath, relativePath)
+        
+        // Générer le placeholder flou depuis la miniature
+        const thumbnailBuffer = await fs.promises.readFile(path.join(process.cwd(), 'public', thumbnailPath))
+        const { base64 } = await getPlaiceholder(thumbnailBuffer)
 
-      // Utiliser le chemin relatif complet comme ID, sans l'extension
-      const id = relativePath.replace(/\.[^/.]+$/, '');
+        // Utiliser le chemin relatif complet comme ID, sans l'extension
+        const id = relativePath.replace(/\.[^/.]+$/, '');
 
-      return {
-        id,
-        title: path.basename(id).split(/[-_]/).map(word => 
-          word.charAt(0).toUpperCase() + word.slice(1)
-        ).join(' '),
-        src: `/photos/${relativePath}`,
-        optimizedSrc: optimizedPath,
-        thumbnailSrc: thumbnailPath,
-        width: dimensions.width,
-        height: dimensions.height,
-        thumbnailWidth: thumbnailDimensions.width,
-        thumbnailHeight: thumbnailDimensions.height,
-        blurDataURL: base64
+        const photo: Photo = {
+          id,
+          title: path.basename(id).split(/[-_]/).map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+          ).join(' '),
+          src: `/photos/${relativePath}`,
+          optimizedSrc: optimizedPath,
+          thumbnailSrc: thumbnailPath,
+          width: dimensions.width,
+          height: dimensions.height,
+          thumbnailWidth: thumbnailDimensions.width,
+          thumbnailHeight: thumbnailDimensions.height,
+          blurDataURL: base64
+        }
+
+        return photo
+      } catch (error) {
+        console.error(`Error processing photo ${relativePath}:`, error)
+        return null
       }
     })
   )
 
-  return photos
+  // Filter out any failed photos and assert the type
+  return photos.filter((photo): photo is Photo => photo !== null)
 }
 
 export async function getPhotoById(id: string): Promise<Photo | undefined> {
