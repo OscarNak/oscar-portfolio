@@ -48,36 +48,3 @@ npm run dev
 ## 📦 Structure du Projet
 
 ```
-src/
-
-## 🚀 Déploiement
-
-Le site est automatiquement déployé sur GitHub Pages à chaque push sur la branche main. Le workflow de déploiement :
-
-1. Build le projet en statique avec Next.js
-2. Déploie les fichiers générés sur GitHub Pages
-3. Le site est accessible à [votre-username].github.io/oscar-portfolio
-
-Pour déployer manuellement :
-
-```bash
-# Build le projet
-npm run build
-
-# Les fichiers statiques seront générés dans le dossier 'out'
-```
-
-## 🔧 Configuration
-
-Le site est configuré pour un déploiement statique avec :
-- Export statique Next.js
-- Images non optimisées au runtime (pré-optimisées)
-- Base path configuré pour GitHub Pages
-├── app/              # Routes et pages Next.js
-├── components/       # Composants React réutilisables
-├── utils/           # Utilitaires et fonctions helpers
-└── types/           # Types TypeScript
-public/
-├── photos/          # Photos originales
-└── optimized/       # Photos optimisées (généré)
-```
