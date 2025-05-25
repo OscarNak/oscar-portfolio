@@ -138,6 +138,7 @@ async function optimizeImage(filePath: string, relativePath: string): Promise<{
         height: height && width ? Math.round(THUMBNAIL_SIZE * (height / width)) : 0,
       },
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error(`Error processing image ${relativePath}:`, error)
     throw new Error(`Failed to process image ${relativePath}: ${error?.message || 'Unknown error'}`)

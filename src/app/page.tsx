@@ -8,8 +8,9 @@ import path from "path";
 // Mark the page as dynamic to ensure searchParams are available
 export const dynamic = 'force-dynamic';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default async function Home({ searchParams }: any) {
-  
+
   // Récupération des données et des paramètres en parallèle
   const [collections, resolvedParams] = await Promise.all([
     getCollections(),
