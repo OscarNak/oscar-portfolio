@@ -1,9 +1,8 @@
 'use client'
 
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { Photo } from '@/utils/photos'
-import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 type PhotoDetailsProps = {
@@ -12,27 +11,11 @@ type PhotoDetailsProps = {
 
 export default function PhotoDetails({ photo }: PhotoDetailsProps) {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(true)
-  const [isImageReady, setIsImageReady] = useState(false)
   const title = photo.title
     .split(/[-_]/)
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ')
     .replace(/\.(jpg|jpeg|png|webp)$/i, '')
-
-  useEffect(() => {
-    setIsLoading(true)
-    setIsImageReady(false)
-      // Précharger l'image optimisée
-    if (typeof window !== 'undefined') {
-      const img = document.createElement('img')
-      img.src = photo.optimizedSrc
-      img.onload = () => {
-        setIsImageReady(true)
-        setIsLoading(false)
-      }
-    }
-  }, [photo.id, photo.optimizedSrc])
 
   return (
     <main className="container mx-auto px-4 py-8">      
@@ -70,39 +53,17 @@ export default function PhotoDetails({ photo }: PhotoDetailsProps) {
             </motion.div>
           </div>
           <div className="relative aspect-auto overflow-hidden rounded-lg">
-            <AnimatePresence mode="wait">
-              {isLoading && (
-                <motion.div
-                  key="loading"
-                  initial={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="absolute inset-0 bg-background/20 backdrop-blur-sm"
-                >
-                  <Image
-                    src={photo.thumbnailSrc}
-                    alt={title}
-                    width={photo.thumbnailWidth}
-                    height={photo.thumbnailHeight}
-                    className="rounded-lg blur-sm"
-                    priority
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
             <Image
               src={photo.optimizedSrc}
               alt={title}
               width={photo.width}
               height={photo.height}
-              className={`rounded-lg transition-opacity duration-300 ${isImageReady ? 'opacity-100' : 'opacity-0'}`}
+              className="rounded-lg"
               quality={100}
               placeholder="blur"
               blurDataURL={photo.blurDataURL}
-              loading="eager"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 50vw"
               priority
-              onLoadingComplete={() => setIsImageReady(true)}
             />
           </div>
         </motion.div>
@@ -115,39 +76,17 @@ export default function PhotoDetails({ photo }: PhotoDetailsProps) {
           className="grid gap-8 md:grid-cols-2"
         >
           <div className="relative aspect-auto overflow-hidden rounded-lg">
-            <AnimatePresence mode="wait">
-              {isLoading && (
-                <motion.div
-                  key="loading"
-                  initial={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="absolute inset-0 bg-background/20 backdrop-blur-sm"
-                >
-                  <Image
-                    src={photo.thumbnailSrc}
-                    alt={title}
-                    width={photo.thumbnailWidth}
-                    height={photo.thumbnailHeight}
-                    className="rounded-lg blur-sm"
-                    priority
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
             <Image
               src={photo.optimizedSrc}
               alt={title}
               width={photo.width}
               height={photo.height}
-              className={`rounded-lg transition-opacity duration-300 ${isImageReady ? 'opacity-100' : 'opacity-0'}`}
+              className="rounded-lg"
               quality={100}
               placeholder="blur"
               blurDataURL={photo.blurDataURL}
-              loading="eager"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 50vw"
               priority
-              onLoadingComplete={() => setIsImageReady(true)}
             />
           </div>
           <div className="space-y-6">

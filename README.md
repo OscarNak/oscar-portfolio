@@ -44,7 +44,3 @@ npm run dev
 - Layout responsive (mobile, tablette, desktop)
 - Animation de chargement type "skeleton"
 - Vue détaillée des photos en plein écran
-
-## 📦 Structure du Projet
-
-```
