@@ -40,7 +40,7 @@ export function CollectionTree({ collections, level = 0 }: CollectionTreeProps) 
   }, [router])
 
   return (
-    <div className="space-y-2 font-mono">
+    <div className="space-y-2 font-mono tracking-wide">
       {collections.map((collection, index) => (
         <motion.div
           key={collection.id}
@@ -59,7 +59,7 @@ export function CollectionTree({ collections, level = 0 }: CollectionTreeProps) 
                 ? 'text-red-400' 
                 : collection.children
                   ? 'text-stone-400'
-                  : 'text-accent2 font-black tracking-wide hover:text-accent3'
+                  : 'text-accent2 font-black hover:text-accent3'
               }
             `}
             onClick={() => !collection.children && handleCollectionClick(collection.path)}

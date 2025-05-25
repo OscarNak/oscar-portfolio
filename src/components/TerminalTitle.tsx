@@ -41,8 +41,9 @@ export function TerminalTitle({ text, speed = 100 }: TerminalTitleProps) {
         <span className="text-accent2">$</span>
         <span className="text-accent2">~/oscar</span>
         <span className="text-white/80">&gt;</span>
-        <div className="text-white font-space">
-          {displayedText}          <span 
+        <div className="text-white font-space tracking-widest">
+          {displayedText}          
+          <span 
             className={`ml-0.5 -translate-y-[-3px] inline-block w-2 h-5 bg-accent2 ${
               cursorVisible ? 'opacity-100' : 'opacity-0'
             }`}

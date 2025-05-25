@@ -9,8 +9,11 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Portfolio Photographique",
-  description: "Portfolio de photographie artistique avec un style moderne et minimaliste",
+  title: "Oscar - Portfolio",
+  description: "Mon portfolio personnel, mettant en avant mes projets et mes passions.",
+  icons: {
+    icon: "/Copper_Golem.ico",
+  },
 };
 
 export default function RootLayout({
