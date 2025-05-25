@@ -21,9 +21,9 @@ export default function PhotoDetails({ photo }: PhotoDetailsProps) {
     <main className="container mx-auto px-4 py-8">      
       <button
         onClick={() => router.back()}
-        className="mb-8 inline-block text-accent2 hover:text-accent3 transition-colors font-space tracking-wide"
+        className="mb-8 inline-block text-accent2 hover:text-accent3 transition-colors font-space tracking-wide text-lg font-black"
       >
-        ← Retour à la galerie
+        &lsaquo; Retour à la galerie
       </button>
       
       {/* Affichage conditionnel selon l'orientation */}

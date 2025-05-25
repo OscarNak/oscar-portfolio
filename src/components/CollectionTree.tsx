@@ -53,13 +53,13 @@ export function CollectionTree({ collections, level = 0 }: CollectionTreeProps) 
         >
           <div 
             className={`
-              flex items-center space-x-2 transition-colors duration-200
+              flex items-center text-lg space-x-2 transition-colors duration-200 font-bold
               ${!collection.children ? 'cursor-pointer' : ''} 
               ${currentPath === collection.path 
-                ? 'text-white font-bold' 
+                ? 'text-red-400' 
                 : collection.children
-                  ? 'text-gray-500'
-                  : 'text-accent2 hover:text-accent3'
+                  ? 'text-stone-400'
+                  : 'text-accent2 font-black tracking-wide hover:text-accent3'
               }
             `}
             onClick={() => !collection.children && handleCollectionClick(collection.path)}
