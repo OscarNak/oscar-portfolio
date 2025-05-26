@@ -7,24 +7,39 @@ import path from "path";
 
 export const revalidate = 3600; // Revalidate every hour
 
+// Typage correct pour Next.js 13+ App Router
 type Props = {
-  searchParams?: { [key: string]: string | string[] | undefined }
+  params: { [key: string]: string };
+  searchParams: { [key: string]: string | string[] | undefined };
 }
 
-export default async function Home({ searchParams }: Props) {
-
-  // Récupération des données et des paramètres en parallèle
-  const [collections, resolvedParams] = await Promise.all([
-    getCollections(),
-    Promise.resolve(searchParams) // Attendre que searchParams soit résolu
-  ]);
-
-  // Traitement des paramètres de recherche
+export default async function Home(props: Props) {
+  // Récupération des collections et des paramètres en parallèle
   const defaultPath = 'voyage/coree/seoul';
-  const rawPath = resolvedParams?.path;
-  const currentPath = rawPath && typeof rawPath === 'string' 
-    ? decodeURIComponent(rawPath)
-    : defaultPath;
+  
+  const resolvedSearchParams = await (async () => {
+    try {
+      // On attend explicitement la résolution des searchParams
+      const params = await Promise.resolve(props.searchParams);
+      if (!params || typeof params.path === 'undefined') return defaultPath;
+      
+      const pathValue = params.path;
+      if (typeof pathValue === 'string') {
+        return decodeURIComponent(pathValue);
+      }
+      if (Array.isArray(pathValue) && pathValue.length > 0) {
+        return decodeURIComponent(pathValue[0]);
+      }
+      return defaultPath;
+    } catch {
+      return defaultPath;
+    }
+  })();
+
+  const [collections, currentPath] = await Promise.all([
+    getCollections(),
+    Promise.resolve(resolvedSearchParams)
+  ]);
   
   const photoPaths = getPhotosForCollection(currentPath);
   
