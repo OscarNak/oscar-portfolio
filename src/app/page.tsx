@@ -9,11 +9,10 @@ export const revalidate = 3600; // Revalidate every hour
 
 // Typage pour Next.js App Router avec async components
 type PageProps = {
-  params: { [key: string]: string | string[] | undefined };
   searchParams?: { [key: string]: string | string[] | undefined };
 }
 
-export default async function Home({ params, searchParams }: PageProps) {
+export default async function Home({ searchParams }: PageProps) {
   // Récupération des collections et des paramètres en parallèle
   const defaultPath = 'voyage/coree/seoul';
     const currentPathFromParams = await (async () => {
