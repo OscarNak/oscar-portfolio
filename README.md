@@ -31,6 +31,8 @@ git clone [votre-repo]
 # Installer les dépendances
 npm install
 
+# ajouter des photos dans dans /public/photos, elles seront optimisées au premier lancement
+
 # Lancer le serveur de développement
 npm run dev
 ```
