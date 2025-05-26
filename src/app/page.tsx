@@ -7,33 +7,28 @@ import path from "path";
 
 export const revalidate = 3600; // Revalidate every hour
 
-export default async function Home({
-  searchParams = {}
-}: {
-  searchParams?: { [key: string]: string | string[] | undefined }
-}) {
-  // Récupération des collections et des paramètres en parallèle
+type SearchParams = {
+  path?: string | string[];
+};
+
+type PageProps = {
+  searchParams?: Promise<SearchParams>;
+};
+
+export default async function Home({ searchParams }: PageProps) {
   const defaultPath = 'voyage/coree/seoul';
-    const currentPathFromParams = await (async () => {
-    if (!searchParams?.path) return defaultPath;
-    
-    const pathValue = searchParams.path;
-    if (typeof pathValue === 'string') {
-      return decodeURIComponent(pathValue);
-    }
-    if (Array.isArray(pathValue) && pathValue.length > 0) {
-      return decodeURIComponent(pathValue[0]);
-    }
-    return defaultPath;
-  })();
-  const [collections, currentPath] = await Promise.all([
-    getCollections(),
-    Promise.resolve(currentPathFromParams)
-  ]);
+  
+  const resolvedParams = await (searchParams ?? Promise.resolve({ path: defaultPath }));
+  const currentPath = typeof resolvedParams.path === 'string' 
+    ? decodeURIComponent(resolvedParams.path)
+    : Array.isArray(resolvedParams.path) && resolvedParams.path.length > 0
+    ? decodeURIComponent(resolvedParams.path[0])
+    : defaultPath;
+
+  // Récupération des collections
+  const collections = await getCollections();
   
   const photoPaths = getPhotosForCollection(currentPath);
-  
-  // On ne récupère que les photos nécessaires pour la collection courante
   const allPhotos = await getPhotos();
   
   // Vérification et déduplication des photos basée sur l'ID
