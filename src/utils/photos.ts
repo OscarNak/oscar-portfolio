@@ -18,132 +18,14 @@ export type Photo = {
 
 const OPTIMIZED_DIR = path.join(process.cwd(), 'public/optimized')
 const THUMBNAIL_SIZE = 400
-const OPTIMIZED_SIZE = 1600
-const OPTIMIZED_QUALITY = 85
-const THUMBNAIL_QUALITY = 60
-const COMPRESSION_EFFORT = 4
+
 
 // Création des dossiers nécessaires
 if (!fs.existsSync(OPTIMIZED_DIR)) {
   fs.mkdirSync(OPTIMIZED_DIR, { recursive: true })
 }
 
-function getAllPhotosRecursively(dir: string, baseDir: string): string[] {
-  const files: string[] = []
-  const entries = fs.readdirSync(dir, { withFileTypes: true })
 
-  entries.forEach(entry => {
-    const fullPath = path.join(dir, entry.name)
-    if (entry.isDirectory()) {
-      files.push(...getAllPhotosRecursively(fullPath, baseDir))
-    } else {
-      const ext = path.extname(entry.name).toLowerCase()
-      if (['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) {
-        // Get path relative to base directory
-        const relativePath = path.relative(baseDir, fullPath)
-        files.push(relativePath)
-      }
-    }
-  })
-
-  return files
-}
-
-async function optimizeImage(filePath: string, relativePath: string): Promise<{
-  optimizedPath: string
-  thumbnailPath: string
-  dimensions: { width: number; height: number }
-  thumbnailDimensions: { width: number; height: number }
-}> {
-  try {
-    const safeRelativePath = relativePath
-      .replace(/\.[^/.]+$/, '')
-      .split('/')
-      .join('_')
-      .replace(/[^a-zA-Z0-9_]/g, '_')
-    
-    const optimizedFileName = `opt_${safeRelativePath}.webp`
-    const thumbnailFileName = `thumb_${safeRelativePath}.webp`
-    const optimizedPath = path.join(OPTIMIZED_DIR, optimizedFileName)
-    const thumbnailPath = path.join(OPTIMIZED_DIR, thumbnailFileName)
-
-    if (fs.existsSync(optimizedPath) && fs.existsSync(thumbnailPath)) {
-      const optimizedMetadata = await sharp(optimizedPath).metadata()
-      const thumbnailMetadata = await sharp(thumbnailPath).metadata()
-
-      return {
-        optimizedPath: `/optimized/${optimizedFileName}`,
-        thumbnailPath: `/optimized/${thumbnailFileName}`,
-        dimensions: {
-          width: optimizedMetadata.width || 0,
-          height: optimizedMetadata.height || 0,
-        },
-        thumbnailDimensions: {
-          width: thumbnailMetadata.width || THUMBNAIL_SIZE,
-          height: thumbnailMetadata.height || 0,
-        },
-      }
-    }
-
-    // Read and validate the source image
-    console.log(`Processing image: ${relativePath}`)    
-    const imageBuffer = await fs.promises.readFile(filePath)
-    const image = sharp(imageBuffer, { failOnError: false })
-    const { width, height, format } = await image.metadata()
-
-    if (!format) {
-      throw new Error(`Could not detect format for image: ${relativePath}`)
-    }
-
-    // Create optimized version
-    if (!fs.existsSync(optimizedPath)) {
-      await image
-        .resize(OPTIMIZED_SIZE, OPTIMIZED_SIZE, {
-          fit: 'inside',
-          withoutEnlargement: true,
-        })
-        .webp({ 
-          quality: OPTIMIZED_QUALITY,
-          effort: COMPRESSION_EFFORT,
-          force: true
-        })
-        .toFile(optimizedPath)
-    }
-
-    // Create thumbnail with a fresh Sharp instance
-    if (!fs.existsSync(thumbnailPath)) {
-      const thumbnailImage = sharp(imageBuffer, { failOnError: false })
-      await thumbnailImage
-        .resize(THUMBNAIL_SIZE, THUMBNAIL_SIZE, {
-          fit: 'inside',
-          withoutEnlargement: true,
-        })
-        .webp({ 
-          quality: THUMBNAIL_QUALITY,
-          effort: COMPRESSION_EFFORT,
-          force: true
-        })
-        .toFile(thumbnailPath)
-    }
-
-    // Utiliser metadata directement au lieu de relire le fichier
-    return {
-      optimizedPath: `/optimized/${optimizedFileName}`,
-      thumbnailPath: `/optimized/${thumbnailFileName}`,      dimensions: {
-        width: width || 0,
-        height: height || 0,
-      },
-      thumbnailDimensions: {
-        width: THUMBNAIL_SIZE,
-        height: height && width ? Math.round(THUMBNAIL_SIZE * (height / width)) : 0,
-      },
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    console.error(`Error processing image ${relativePath}:`, error)
-    throw new Error(`Failed to process image ${relativePath}: ${error?.message || 'Unknown error'}`)
-  }
-}
 
 // Cache pour les métadonnées des photos
 let photoCache: Photo[] | null = null;
@@ -162,51 +44,68 @@ export async function getPhotos(): Promise<Photo[]> {
     return photoCache;
   }
 
-  const photosDirectory = path.join(process.cwd(), 'public/photos');
-  const filePaths = getAllPhotosRecursively(photosDirectory, "public/photos");
+  const optimizedDirectory = path.join(process.cwd(), 'public/optimized');
+  const files = fs.readdirSync(optimizedDirectory)
+    .filter((file: string) => file.startsWith('opt_'))
+    .sort();
 
-  // Traiter les photos en parallèle par lots de 10
-  const batchSize = 10;
   const photos: Photo[] = [];
   
-  for (let i = 0; i < filePaths.length; i += batchSize) {
-    const batch = filePaths.slice(i, i + batchSize);
+  for (let i = 0; i < files.length; i += 10) {
+    const batch = files.slice(i, i + 10);
     const batchResults = await Promise.all(
-      batch.map(async (relativePath) => {
+      batch.map(async (filename: string) => {
         try {
-          const absoluteFilePath = path.join(photosDirectory, relativePath);
-          const { optimizedPath, thumbnailPath, dimensions, thumbnailDimensions } = 
-            await optimizeImage(absoluteFilePath, relativePath);
+          const optimizedPath = `/optimized/${filename}`;
+          const thumbnailPath = `/optimized/${filename.replace('opt_', 'thumb_')}`;
+          
+          // Obtenir les dimensions de l'image optimisée
+          const optimizedFilePath = path.join(process.cwd(), 'public', optimizedPath);
+          const optimizedMetadata = await sharp(optimizedFilePath).metadata();
+          
+          // Vérifier que le thumbnail existe
+          const thumbnailFilePath = path.join(process.cwd(), 'public', thumbnailPath);
+          if (!fs.existsSync(thumbnailFilePath)) {
+            throw new Error(`Thumbnail not found: ${thumbnailPath}`);
+          }
           
           // Générer le placeholder flou depuis la miniature
-          const thumbnailBuffer = await fs.promises.readFile(path.join(process.cwd(), 'public', thumbnailPath));
+          const thumbnailBuffer = await fs.promises.readFile(thumbnailFilePath);
           const { base64 } = await getPlaiceholder(thumbnailBuffer);
+          const thumbnailMetadata = await sharp(thumbnailBuffer).metadata();
           
-          const id = normalizePhotoId(relativePath);
+          // Reconstruire l'ID en gardant la structure des dossiers
+          const id = filename
+            .replace('opt_', '')
+            .replace(/\.[^/.]+$/, '')
+            .replace(/_/g, '/'); // Convertir les underscores en slashes pour recréer la structure
+          
           const photo: Photo = {
             id,
-            title: path.basename(id).split(/[-_]/).map(word => 
-              word.charAt(0).toUpperCase() + word.slice(1)
-            ).join(' '),
-            src: `/photos/${relativePath}`,
+            title: path.basename(id)
+              .split(/[-_]/)
+              .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ')
+              .replace(/\.(jpg|jpeg|png|webp)$/i, ''),
+            src: optimizedPath,
             optimizedSrc: optimizedPath,
             thumbnailSrc: thumbnailPath,
-            width: dimensions.width,
-            height: dimensions.height,
-            thumbnailWidth: thumbnailDimensions.width,
-            thumbnailHeight: thumbnailDimensions.height,
+            width: optimizedMetadata.width || 0,
+            height: optimizedMetadata.height || 0,
+            thumbnailWidth: thumbnailMetadata.width || THUMBNAIL_SIZE,
+            thumbnailHeight: thumbnailMetadata.height || 0,
             blurDataURL: base64
           };
 
           return photo;
         } catch (error) {
-          console.error(`Error processing photo ${relativePath}:`, error);
+          console.error(`Error processing photo ${filename}:`, error);
           return null;
         }
       })
     );
 
-    photos.push(...batchResults.filter((photo): photo is Photo => photo !== null));
+    photos.push(...batchResults.filter((photo: Photo | null): photo is Photo => photo !== null));
   }
 
   // Mettre à jour le cache
@@ -219,11 +118,4 @@ export async function getPhotos(): Promise<Photo[]> {
 export async function getPhotoById(id: string): Promise<Photo | undefined> {
   const photos = await getPhotos()
   return photos.find(p => p.id === id)
-}
-
-/**
- * Normalizes a photo ID by ensuring forward slashes and removing file extension
- */
-function normalizePhotoId(relativePath: string): string {
-  return relativePath.replace(/\\/g, '/').replace(/\.[^/.]+$/, '')
 }
